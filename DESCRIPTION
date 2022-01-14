@@ -1,0 +1,21 @@
+Package: immuntools
+Type: Package
+Title: Larsen lab data analysis toolbox
+Version: 0.1.0
+Authors@R: c(person("Joan","Zhang",email = "joan.zhang@emory.edu", role = c("aut", "cre")),
+             person("Christian P","Larsen",email = "clarsen@emory.edu", role = c("cph", "aut")))
+Description: Provides functions epitope prediction, tcr analysis, single analysis.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.1.2
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: 
+    knitr
+Imports:
+  devtools,
+  usethis,
+  tidyverse,
+  purrr,
+  rstudioapi

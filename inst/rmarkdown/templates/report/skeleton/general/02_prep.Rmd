@@ -1,0 +1,95 @@
+---
+title: "Data Preparation"
+author: "Author name(s) "
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_notebook:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    number_sections: false
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE
+)
+
+# load packages
+# packages for data import
+library(REDCapR)
+library(ncdfFlow)
+
+# packages for data manipulation
+library(tidyverse)
+library(dplyr)
+library(purrr)
+library(lubridate)
+library(janitor)
+library(skimr)
+
+# packages for data export
+library(writexl)
+```
+
+## Import raw data
+### - csv or excel data
+<font color="grey"><i> 
+raw_data <- read_csv("/data/raw/yourcsvfile.csv") 
+</i></font>
+
+### - RDS
+<font color="grey"><i>
+raw_data <- read_rds("/data/raw/yourrdsfile.rds")
+</i></font>
+
+### - REDcap data
+<font color="grey"><i>
+raw_data <- redcap_read(redcap_uri = yourredcapurl, token = apitoken, raw_or_label = 'label',verbose = FALSE) 
+</i></font>
+
+### - flow cytometry data
+<font color="grey"><i>
+raw_data <- read.ncdfFlowSet("/data/raw/yourfcsfiles") 
+</i></font>
+
+### - other types of data
+
+## Check raw data
+<font color="grey"><i>
+dplyr::glimpse(raw_data)  
+ggplot(data = raw_data, aes(x = x_var, y = y_var , color = col_var)) + geom_boxplot()  
+</i></font>
+
+```{r}
+dplyr::glimpse(iris)  
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width , color = Species)) + geom_boxplot() 
+```
+
+## Process raw data
+<font color="grey"> code to clean the raw data </font>
+
+## Check processed data
+<font color="grey"><i>
+dplyr::glimpse(proc_data)  
+ggplot(data = proc_data, aes(x = x_var, y = y_var , color = col_var)) + geom_boxplot()  
+</i></font>
+
+```{r} 
+dplyr::glimpse(iris)  
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width , color = Species)) + geom_boxplot() 
+```
+
+## Export processed data
+### - export to csv/excel/RDS 
+<font color="grey"><i> 
+write.csv(proc_data, "/data/proc/processeddataname.csv")  
+write_xlsx(list(worksheet_name = proc_data), "/data/proc/processeddataname.xlsx")   
+write_rds(proc_data, "/data/proc/processeddataname.rds")
+</i></font>
+
+ 
+
+
+

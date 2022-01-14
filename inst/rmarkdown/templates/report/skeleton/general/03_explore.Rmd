@@ -1,0 +1,76 @@
+---
+title: "Data Exploration"
+author: "Author name(s) "
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+   ioslides_presentation:
+     widescreen: true
+     smaller: true
+     incremental: true
+---
+
+```{r setup, include=FALSE}
+# setup chunk options
+knitr::opts_chunk$set(
+  echo = FALSE
+)
+
+# load packages
+library(skimr)
+library(DataExplorer)
+library(naniar)
+```
+
+## Import data 
+- introduction to data
+
+## Explore data
+### explore variable type 
+### explore missingness 
+- which variables contain a missing value
+- frequency of missings for each variable
+- number of missings for each variable
+
+--- 
+
+```{r}
+iris %>% 
+  skim() %>% 
+  summary()
+```
+- explore variable type
+
+
+---
+
+- explore missingness: which variables contain a missing value
+```{r}
+gg_miss_which(airquality)
+```
+
+--- 
+
+- explore missingness: frequency of missing values
+```{r}
+plot_missing(airquality)
+```
+
+---
+
+- explore missingness: another way to look the frequency of missing values
+```{r}
+vis_miss(airquality)
+```
+
+---
+
+- explore missingness : number of missings for each variable
+```{r}
+gg_miss_var(airquality)
+```
+
+
+
+
+
+
