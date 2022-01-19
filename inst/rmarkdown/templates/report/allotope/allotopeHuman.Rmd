@@ -1,0 +1,413 @@
+---
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    df_print: paged
+    code_folding: show 
+params:
+  donor_ag: !r c("DQA1_01_01", "DQA1_01_02")
+  self_ag: !r c("DQA1_06_01", "DQA1_03_03")
+  presenting_allele: !r c("DRB1_08_03", "DRB1_04_01")
+  seq_len: '15'
+  
+title: '*AllotopeR* peptide prediction report'
+date: "`r Sys.Date()`"
+---
+
+This report provides a summary of the IEDB query step for allo-epitope identification.  The output csv contain both donor and recipient peptides derived from the "antigen" input alleles that are predicted to bind bind to the user specified "presenting" allele. The user can use these files as input for in the prep_hu_binders.RmD step in to identify only donor derived peptides that contain non self polymorphisms.
+
+## Source code
+
+## Appendix
+### Resources and Reference files
+
+The allele lists and amino acid sequences used in this package were downloaded from [IPD_IMGT-HLA](https://www.ebi.ac.uk/ipd/imgt/hla/) website on `date` - or we give version ( 10/2021 ?). A description of can be found at [HLA nomenclature](http://hla.alleles.org/nomenclature/index.html). The prediction function used in *allotopeR* is performed via the API to the [Immune epitope database](https://www.iedb.org).
+
+```{r chunk option, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, include = FALSE)
+```
+
+```{r packages}
+library(tidyverse)
+library(janitor)
+library(here)
+library(glue)
+library(DT)
+library(hlaR)
+library(httr)
+library(datasets)
+```
+
+```{r constants}
+#* variables *#
+method <- c("netmhciipan", "recommended") # IEDB prediction method
+nm_don <- str_c(params$donor_ag,collapse = "_") # donor/presenting antigens bind to output file name
+nm_present <- str_c(params$presenting_allele, collapse = "_") 
+#* end of variables *#
+
+#* functions *#
+find_non_self_binders <- function(data){
+    self_peps <- data %>% filter(ag_type == "self")
+    allo_peps <- data %>% filter(ag_type == "stim") %>% anti_join(self_peps, by = "peptide")
+    return(allo_peps)
+}
+#* end of functions *#
+ 
+#* start of reference tables *#
+tbl_fasta_human <- read.csv("https://raw.githubusercontent.com/LarsenLab/public-data/master/IEDB/human_all.csv", check.names = FALSE) # fasta reference table, human
+
+tbl_eplet_II <- read.csv(system.file("extdata/example", "MHC_II_test.csv", package = "hlaR"), sep = ",", header = TRUE) %>% filter(row_number() <= 2) # MHC II eplet table
+#* end of reference tables *#
+
+#* others *#   
+if(!dir.exists(file.path(here(), "output_httr"))){ # create an output folder if it doesn't exist
+  dir.create(file.path(here(), "output_httr"))
+}
+
+out_fd <- as.character(glue(here(), "/output_httr/")) 
+#* end of others *#
+```
+
+```{r prep:reference table}
+# sub set
+ref_self <- tbl_fasta_human %>% 
+    filter(allele_short_nm %in% c(params$donor_ag, params$self_ag)) %>% 
+    distinct(seq, .keep_all = T) %>% 
+    group_by(allele_short_nm) %>% 
+    slice_max(order_by = length) %>%
+    ungroup()
+
+ref_present <- tbl_fasta_human %>% 
+    filter(allele_short_nm %in% params$presenting_allele) %>% 
+    distinct(seq, .keep_all = T) %>% 
+    group_by(allele_short_nm) %>% 
+    slice_max(order_by = length) %>%
+    ungroup()
+
+allele_query <- ref_present %>% 
+    pull(allele_query_nm) %>% 
+    str_c(collapse = ",")
+
+# clean labels
+donor_ag_label <- params$donor_ag %>% 
+                  str_to_lower() %>% 
+                  str_c(sep = "_", collapse = T) %>%
+                        str_replace(., "TRUE", "-") 
+
+presenting_allele_label <- params$presenting_allele %>% 
+                            str_to_lower() %>% 
+                            str_c(sep = "_", collapse = T) %>%
+                            str_replace(., "TRUE", "-") 
+rm(tbl_fasta_human)
+```
+
+```{r prep:IEDB query}
+query_prep <- ref_self %>%
+              mutate(iedb_query_id = str_c("%3E", allele),
+                     iedb_query_seq = str_c("", seq),
+                     iedb_query_seq = str_replace_all(iedb_query_seq, "\\n", ""),
+                     query_fasta = str_c(iedb_query_id, iedb_query_seq))
+
+seq_names <- query_prep %>%  
+              rowid_to_column() %>% 
+              dplyr::rename(antigen = allele_short_nm,
+                            seq_num = rowid) %>% 
+              mutate(ag_type = if_else(antigen %in% params$donor_ag, "stim", "self")) %>%
+              select(-c(seq, id, query_fasta, iedb_query_id))
+
+seq_names_short <- seq_names %>% 
+                    select(antigen, ag_type)
+
+```
+
+```{r eplet mismatch}
+# allele info
+allele <- seq_names_short %>% 
+                left_join(., ref_self, by = c("antigen" = "allele_short_nm")) %>%
+                mutate(allele = str_remove(allele_query_nm, "HLA-")) %>%
+                select(ag_type, allele) 
+rcpt <- allele %>% filter(ag_type == "self") %>% pull(allele)
+don <- allele %>% filter(ag_type == "stim") %>% pull(allele)
+
+if(length(rcpt) == 1){
+  rcpt <- c(rcpt, rcpt)
+} else{rcpt <- rcpt}
+
+ if(length(don) == 1){
+  don <- c(don, don)
+} else{don <- don}
+
+rcpt_ag <- str_extract(rcpt[1], "[^*]+") %>% str_remove(., "[0-9]")
+don_ag <- str_extract(don[1], "[^*]+") %>% str_remove(., "[0-9]")
+
+# build allele table for eplet mismatch calculation
+rcpt_indx <- which(str_detect(colnames(tbl_eplet_II), rcpt_ag))
+don_indx <- which(str_detect(colnames(tbl_eplet_II), don_ag))
+
+tbl_eplet_II[c(1:2), ] <- NA
+tbl_eplet_II$pair_id <- 1
+
+tbl_eplet_II[1,]$subject_type<- "recipient"
+tbl_eplet_II[1,rcpt_indx[1]] <- rcpt[1]
+tbl_eplet_II[1,rcpt_indx[2]] <- rcpt[2]
+
+tbl_eplet_II[2,]$subject_type<- "donor"
+tbl_eplet_II[2,don_indx[1]] <- don[1]
+tbl_eplet_II[2,don_indx[2]] <- don[2]
+
+eplet_mm <- CalEpletMHCII(tbl_eplet_II, ver = 2)$overall_count
+
+rm(allele, don, don_ag, don_indx, rcpt, rcpt_ag, rcpt_indx, tbl_eplet_II)
+```
+
+```{r prediction}
+for(i in 1:length(method)){ # for each method
+  for(j in 1:nrow(seq_names)){ # for each antigen
+    # set parameter list
+    param2httr = list('method' = method[i],
+                      'sequence_text' = as.character(seq_names$iedb_query_seq[j]),
+                      'allele' = str_c(ref_present$allele_query_nm, collapse = ","),
+                      'length' = params$seq_len)
+    # send request to api
+    res_api <- httr::POST(url = 'http://tools-cluster-interface.iedb.org/tools_api/mhcii/', 
+                          body = param2httr)
+  
+    # extract content from the request
+     cat(httr::content(res_api, "text"), 
+         file = glue(out_fd, seq_names$antigen[j], "_", method[i], ".txt"))
+  }
+}
+```
+
+```{r collect pred tables}
+#* start of netmhciipan *#
+  files <- fs::dir_ls(out_fd, glob = "*_netmhciipan.txt")
+  netmhciipan <- files %>%
+              setNames(nm = .) %>% 
+              map_df(~read_tsv(.x, col_types = cols(), col_names = TRUE), .id = "id")  %>%
+              mutate(antigen = str_remove(gsub(".*/", "", id), "_netmhciipan.txt")) %>%
+              select(-c(id, seq_num)) %>%
+                          left_join(seq_names_short, by = "antigen") %>%
+                          select(allele, antigen, ag_type, everything()) %>%
+                          mutate(binder = if_else(rank <= 3, "strong",
+                                                    if_else(rank <=10, "weak", "no")))  
+
+  tt_screen_netpan <- netmhciipan %>% filter(ag_type != "self") %>% nrow(.)
+  
+  netmhciipan <- netmhciipan %>%
+              filter(binder != "no") %>%
+              arrange(match(binder, c("strong", "weak")))
+  
+write_csv(netmhciipan, 
+          glue("{out_fd}netpan_peps_binder_{nm_don}_in_{nm_present}.csv"))
+unlink(files)
+#* start of netmhciipan *#
+
+#* start of recommended *#
+# please note: binder label for iedb method is derived from adjusted_rank
+files <- fs::dir_ls(out_fd, glob = "*_recommended.txt")
+
+recommended <- files %>%
+                setNames(nm = .) %>% 
+                map_df(~read_tsv(.x, col_types = cols(), col_names = TRUE), .id = "id")  %>%
+                mutate(antigen = str_remove(gsub(".*/", "", id), "_recommended.txt")) %>%
+                select(-c(id, seq_num)) %>%
+                left_join(seq_names_short, by = "antigen") %>%
+                select(allele, antigen, ag_type, everything()) %>%
+                mutate(binder = if_else(adjusted_rank <= 3, "strong",
+                                        if_else(adjusted_rank <= 10, "weak", "no"))) 
+ tt_screen_rec <- recommended %>% filter(ag_type != "self") %>% nrow(.)
+  
+ recommended <- recommended %>%
+              filter(binder != "no") %>%
+              arrange(match(binder, c("strong", "weak")))
+
+write_csv(recommended, 
+          glue("{out_fd}rec_peps_binder_{nm_don}_in_{nm_present}.csv"))
+unlink(files)
+#* end of recommended *#
+```
+
+```{r antigen info}
+# input antigens
+allele_info <- seq_names %>% 
+                select(-c(seq_num, length, allele, allele_query_nm)) %>%
+                left_join(., ref_self, by = c("antigen" = "allele_short_nm")) %>%
+                dplyr::rename(type = ag_type, seq_len = length) %>% 
+                select(antigen, type, seq, seq_len ) %>%
+                arrange(type)
+```
+
+```{r binder info}
+# peptide of self antigen are excluded
+num_len <- ifelse(str_count(params$seq_len, ",") > 0, 
+                  str_count(params$seq_len, ",") + 1,
+                  1)
+
+netpan <- iedb <- data.frame(method = character(),
+                     pep_len = character(),
+                     tt_screen = character(),
+                     num_binder_noneself = character(),
+                     num_uniqcore_noneself = character())
+
+# binder info for each seq_length
+# netpan
+for(i in 1:num_len){
+  tmp <- netmhciipan %>% 
+         find_non_self_binders() %>%
+         filter(ag_type != "self") %>% 
+         filter(length == unique(netmhciipan$length)[i] ) 
+  
+  netpan[i,]$method <- "netpan"
+  netpan[i,]$pep_len <- unique(tmp$length)
+  netpan[i,]$tt_screen <- tt_screen_netpan
+  
+  cnt1 <- tmp %>% 
+          group_by(binder) %>%
+          tally() %>%
+          data.frame() 
+  cnt2 <- paste(cnt1$binder, cnt1$n, sep = ":")
+  netpan[i,]$num_binder_noneself <- ifelse(length(cnt2) == 1,
+                                           cnt2,
+                                           paste (cnt2[1], cnt2[2], sep = " "))
+  rm(cnt1, cnt2)
+  
+  cnt1 <- tmp %>% 
+          filter(core_peptide != "-") %>%
+          group_by(binder) %>% 
+          summarise(count = n_distinct(core_peptide)) 
+  
+  cnt2 <- paste(cnt1$binder, cnt1$count, sep = ":")
+  netpan[i,]$num_uniqcore_noneself <- ifelse(length(cnt2) == 1, cnt2,
+                                           paste(cnt2[1], cnt2[2], sep = " "))
+  
+  rm(tmp, cnt1, cnt2)
+  
+  # rec_peps
+  # "The selection IEDB Recommended uses the Consensus approach, combining NN-align, SMM-align, CombLib and Sturniolo if any corresponding predictor is available for the molecule, otherwise NetMHCIIpan is used. The Consensus approach considers a combination of any three of the four methods, if available, where Sturniolo as a final choice." - http://tools.iedb.org/mhcii/help/#Method
+  # filter out netpan result from iedb recommended method
+  tmp <- recommended %>% 
+         find_non_self_binders() %>%
+         filter(ag_type != "self" & method != "NetMHCIIpan") %>% 
+         filter(length == unique(recommended$length)[i] )
+  
+  iedb[i,]$method <- "iedb"
+  iedb[i,]$pep_len <- unique(tmp$length)
+  iedb[i,]$tt_screen <- tt_screen_rec
+  
+  cnt1 <- tmp %>% 
+          group_by(binder) %>% 
+          tally() %>%
+          data.frame() 
+  cnt2 <- paste(cnt1$binder, cnt1$n, sep = ":")
+  iedb[i,]$num_binder_noneself <- ifelse(length(cnt2) == 1, cnt2,
+                                         paste(cnt2[1], cnt2[2], sep = " "))
+  
+  rm(cnt1, cnt2)
+ 
+  cnt1 <- tmp %>% 
+          group_by(binder) %>% 
+          summarise(count = n_distinct(sturniolo_core)) 
+  
+  cnt2 <- paste(cnt1$binder, cnt1$count, sep = ":")
+  iedb[i,]$num_uniqcore_noneself <- ifelse(length(cnt2) == 1, cnt2,
+                                           paste(cnt2[1], cnt2[2], sep = " "))
+
+  
+  rm(tmp, cnt1, cnt2)
+}
+
+# none-self, unique cores
+report <- rbind(netpan, iedb) %>% 
+          `rownames<-`(seq_len(nrow(netpan)+nrow(iedb))) %>% 
+          arrange(method, pep_len) 
+
+```
+
+```{r distinct cores}
+ag_peps_net <- netmhciipan %>%  
+                find_non_self_binders() %>%
+                dplyr::rename(net_binder = binder,
+                              net_core = core_peptide,
+                              net_allele = allele,
+                              net_antigen = antigen,
+                              net_rank = rank) %>%
+                select(net_allele, net_antigen, peptide, length, net_binder, net_core, net_rank)
+
+ag_peps_rec <- recommended %>% 
+                find_non_self_binders() %>%
+                dplyr::rename(iedb_binder = binder,
+                              iedb_allele = allele,
+                              iedb_antigen = antigen,
+                              iedb_core = sturniolo_core,
+                              iedb_rank = adjusted_rank) %>% 
+                filter(method != "NetMHCIIpan") %>%
+                select(iedb_allele, iedb_antigen, peptide, iedb_binder, iedb_core, iedb_rank)
+
+ag_peps <- ag_peps_rec %>%  
+            right_join(ag_peps_net, by = "peptide") %>% # yes, use right_join
+            mutate(iedb_allele = str_remove(iedb_allele, "HLA-"),
+                   net_allele = str_remove(net_allele, "HLA-")) %>%
+            select(peptide, 
+                   net_allele, net_antigen, net_binder, net_core, net_rank, 
+                   iedb_allele, iedb_antigen, iedb_binder, iedb_core, iedb_rank)%>%
+            distinct() %>%
+            arrange(peptide)
+
+# dups on peptide and net_core
+peps_dups <- ag_peps %>% 
+             get_dupes(peptide, net_core, iedb_core) %>% 
+             group_by(peptide, net_core, iedb_core) %>% 
+             arrange(net_rank, .by_group=TRUE) %>% 
+             mutate(n = row_number()) %>%
+             ungroup() %>%
+             filter(n == 1) %>% 
+             select(-c(dupe_count, n))
+
+peps_uniq <- ag_peps %>%
+  filter(!(peptide %in% peps_dups$peptide) & !(net_core %in% peps_dups$net_core) & !(iedb_core %in% peps_dups$iedb_core))
+
+peps_distinct_cores <- data.frame(rbind(peps_dups, peps_uniq)) %>% 
+                       arrange(peptide)
+
+rm(find_non_self_binders, ag_peps_net, ag_peps_rec, ag_peps, peps_dups)
+```
+
+## Result Tables
+### antigen info
+```{r table1, include = TRUE, results = 'asis'}
+# antigen info
+datatable(allele_info, 
+          caption = glue("table 1: total/unique number of eplet mismatch are ", eplet_mm$mm_cnt_tt, "/", eplet_mm$mm_cn_uniq), 
+          rownames = FALSE,
+          options = list(columnDefs = 
+                           list(list(className = 'dt-left', targets = "_all")),
+                         lengthChange = FALSE))
+```
+
+### binder summary
+```{r table2, include = TRUE, results = 'asis'}
+# summary
+datatable(report, 
+          caption = "table 2: summary of prediction",
+          rownames = FALSE,
+          options = list(columnDefs = 
+                           list(list(className = 'dt-left', targets = "_all")),
+                         lengthChange = FALSE))
+```
+
+### distinct cores
+```{r table3, include = TRUE, results = 'asis'}
+# distinct core with full peptide
+datatable(peps_distinct_cores, 
+          caption = "table 3: distinct core peptides",
+          rownames = TRUE,
+          filter = list(position = 'top', clear = FALSE),
+          options = list(pageLength = 50,
+                         columnDefs = 
+                         list(list(className = 'dt-left', targets = "_all")),
+                         lengthChange = FALSE))
+```
+
+

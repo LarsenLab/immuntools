@@ -39,15 +39,15 @@ set_proj <- function(fd_name, proj_type)
   }
 
   if (proj_type == "general") {
-    fd_from <- paste(path.package("ezsetup"),"rmarkdown/templates/report/skeleton/general",sep = "/")
+    fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/general",sep = "/")
   } else if (proj_type %in% c("sc", "SC", "singlecell", "single_cell")) {
-    fd_from <- paste(path.package("ezsetup"),"rmarkdown/templates/report/skeleton/sc",sep = "/")
+    fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/sc",sep = "/")
   } else if (proj_type %in% c("flow", "Flow")) {
-    fd_from <- paste(path.package("ezsetup"),"rmarkdown/templates/report/skeleton/flow",sep = "/")
+    fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/flow",sep = "/")
   } else if (proj_type %in% c("metagen")) {
-    fd_from <- paste(path.package("ezsetup"),"rmarkdown/templates/report/skeleton/metagen",sep = "/")
+    fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/metagen",sep = "/")
   } else {
-    fd_from <- paste(path.package("ezsetup"),"rmarkdown/templates/report/skeleton/general",sep = "/")
+    fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/general",sep = "/")
   }
 
   # copy .Rmd files from sub-folder
@@ -55,7 +55,7 @@ set_proj <- function(fd_name, proj_type)
   file.copy(file.path(fd_from,list_of_files), fd_name)
 
   # copy skeleton.Rmd and style.css from skeleton folder for tree view
-  fd_from_skel <- paste(path.package("ezsetup"),"rmarkdown/templates/report/skeleton",sep = "/")
+  fd_from_skel <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton",sep = "/")
   list_of_files_skel <- list.files(fd_from_skel, ".Rmd|.css")
   file.copy(file.path(fd_from_skel,list_of_files_skel), fd_name)
 

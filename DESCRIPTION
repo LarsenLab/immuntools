@@ -9,8 +9,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.1.2
 Suggests: 
-    knitr,
-    rmarkdown
+    knitr
 VignetteBuilder: 
     knitr
 Imports:
@@ -18,4 +17,5 @@ Imports:
   usethis,
   tidyverse,
   purrr,
-  rstudioapi
+  rstudioapi,
+  rmarkdown
