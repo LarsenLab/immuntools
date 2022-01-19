@@ -10,6 +10,8 @@ params:
   self_ag: !r c("DQA1_06_01", "DQA1_03_03")
   presenting_allele: !r c("DRB1_08_03", "DRB1_04_01")
   seq_len: '15'
+  align_plot: FALSE
+  
   
 title: '*AllotopeR* peptide prediction report'
 date: "`r Sys.Date()`"
@@ -26,14 +28,15 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, include = F
 ```
 
 ```{r packages}
+library(httr)
 library(tidyverse)
-#library(janitor)
+library(janitor)
 library(here)
 library(glue)
 library(DT)
-library(hlaR)
-library(httr)
 library(datasets)
+library(hlaR)
+library(msa)
 ```
 
 ```{r constants}
@@ -407,6 +410,158 @@ datatable(peps_distinct_cores,
                          lengthChange = FALSE,
                           dom = 'Bfrtip',
                          buttons = c('csv', "copy")))
+```
+
+```{r msa-align, eval = align_plot}
+# function to plot alignment with msa package
+plot_align <- function(in_dat, out_name){
+  write_lines(in_dat, "tmp.fasta")
+  mySeqs <- readAAStringSet("tmp.fasta")
+  myAlignment <- msa(mySeqs, order = "input")
+
+  msaPrettyPrint(myAlignment, 
+                 file = out_name,
+                 output = "pdf",
+                 showNames = "left",
+                 showNumbering = "none",
+                 showLogo = "top",
+                 showConsensus = "bottom",
+                 logoColors = "rasmol",
+                 verbose = FALSE,
+                 askForOverwrite = FALSE)
+  
+  file.remove("tmp.fasta")
+}
+
+ for_align <- allele_info %>%
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen)) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) 
+ 
+ # if only one input donor allele 
+ if(length(params$donor_ag) == 1){
+   for_align1 <- for_align %>% pull(fa_split) %>% as_vector()
+   
+   # seq position 1-50
+   short1_1st <- allele_info %>%
+               mutate(seq = str_sub(seq,1,50)) %>%
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen)) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) %>%
+               pull(fa_split) %>% 
+               as_vector()
+   
+  # seq position 51-100
+  short1_2nd <- allele_info %>%
+               mutate(seq = str_sub(seq,51,100)) %>%
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen)) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) %>%
+               pull(fa_split) %>% 
+               as_vector()
+  
+   plot_align(in_dat = for_align1, out_name = "align1.pdf")
+   plot_align(in_dat = short1_1st, out_name = "align1_1st.pdf")
+   plot_align(in_dat = short1_2nd, out_name = "align1_2nd.pdf")
+ }
+ 
+ # if have both donor input allele
+ if(length(params$donor_ag) == 2){
+   for_align1 <- for_align %>%
+                  filter(antigen == params$donor_ag[1] | type == "self") %>% 
+                  pull(fa_split) %>% 
+                  as_vector()
+   
+   short1_1st <- allele_info %>%
+               mutate(seq = str_remove_all(str_sub(seq,1,50), "\n")) %>%
+               filter(antigen == params$donor_ag[1] | type == "self") %>% 
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen, "\n")) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) %>%
+               pull(fa_split) %>% 
+               as_vector()
+   
+   short1_2nd <- allele_info %>%
+               mutate(seq = str_remove_all(str_sub(seq,51,100), "\n")) %>%
+               filter(antigen == params$donor_ag[1] | type == "self") %>% 
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen, "\n")) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) %>%
+               pull(fa_split) %>% 
+               as_vector()
+ 
+    for_align2 <- for_align %>%
+                  filter(antigen == params$donor_ag[2] | type == "self") %>% 
+                  pull(fa_split) %>% 
+                  as_vector()
+   
+     short2_1st <- allele_info %>%
+               mutate(seq = str_remove_all(str_sub(seq,1,50), "\n")) %>%
+               filter(antigen == params$donor_ag[2] | type == "self") %>% 
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen, "\n")) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) %>%
+               pull(fa_split) %>% 
+               as_vector()
+   
+   short2_2nd <- allele_info %>%
+               mutate(seq = str_remove_all(str_sub(seq,51,100), "\n")) %>%
+               filter(antigen == params$donor_ag[2] | type == "self") %>% 
+               arrange(desc(type)) %>%
+               mutate(allele_fa_nm = str_c(">", type, "_", antigen, "\n")) %>% 
+               unite("fa", c(allele_fa_nm, seq), sep = "", remove = F) %>%
+               mutate(fa_split = str_split(fa, "\n")) %>%
+               pull(fa_split) %>% 
+               as_vector()
+   
+   plot_align(in_dat = for_align1, out_name = "align1.pdf")
+   plot_align(in_dat = short1_1st, out_name = "align1_1st.pdf")
+   plot_align(in_dat = short1_2nd, out_name = "align1_2nd.pdf")
+   
+   plot_align(in_dat = for_align2, out_name = "align2.pdf")
+   plot_align(in_dat = short2_1st, out_name = "align2_1st.pdf")
+   plot_align(in_dat = short2_2nd, out_name = "align2_2nd.pdf")
+ }
+ 
+```
+
+### sequence alignment
+#### allele 1
+```{r msa-align1, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+knitr::include_graphics(path="align1.pdf")
+```
+
+```{r msa-align1_1st, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+knitr::include_graphics(path="align1_1st.pdf")
+```
+
+```{r msa-align1_2nd, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+knitr::include_graphics(path="align1_2nd.pdf")
+```
+
+#### allele 2
+```{r msa-align2, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+if(length(params$donor_ag) == 2){
+knitr::include_graphics(path="align2.pdf")
+}
+```
+
+```{r msa-align2_1st, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+if(length(params$donor_ag) == 2){
+knitr::include_graphics(path="align2_1st.pdf")
+}
+```
+
+```{r msa-align2_2nd, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+if(length(params$donor_ag) == 2){
+knitr::include_graphics(path="align2_2nd.pdf")
+}
 ```
 
 
