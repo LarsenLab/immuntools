@@ -1,6 +1,6 @@
 #' @name set_proj
 #' @title Function to set up a R project
-#' @param fd_name folder name.
+#' @param fd_name path and folder name.
 #' @param proj_type project type.
 #' working folder/project name of the project
 #' @return
@@ -15,7 +15,7 @@
 #' rstudioapi
 #' @examples
 #' \dontrun{
-#' set_proj("/Users/newfolder")
+#' set_proj(fd_name= "/Users/newfolder", proj_type = "g)
 #' }
 
 set_proj <- function(fd_name, proj_type = "general")

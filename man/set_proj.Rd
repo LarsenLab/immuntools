@@ -7,7 +7,7 @@
 set_proj(fd_name, proj_type = "general")
 }
 \arguments{
-\item{fd_name}{folder name.}
+\item{fd_name}{path and folder name.}
 
 \item{proj_type}{project type.
 working folder/project name of the project}
@@ -17,9 +17,4 @@ working folder/project name of the project}
 }
 \description{
 Function to set up a R project
-}
-\examples{
-\dontrun{
-set_proj("/Users/newfolder")
-}
 }
