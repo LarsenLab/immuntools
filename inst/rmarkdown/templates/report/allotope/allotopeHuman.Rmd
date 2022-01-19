@@ -24,6 +24,8 @@ The allele lists and amino acid sequences used in this package were downloaded f
 
 ```{r chunk option, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, include = FALSE)
+
+eval_plot <- params$align_plot
 ```
 
 ```{r packages}
@@ -403,15 +405,16 @@ datatable(peps_distinct_cores,
           caption = "table 3: distinct core peptides",
           rownames = TRUE,
           filter = list(position = 'top', clear = FALSE),
+          extensions = "Buttons", 
           options = list(pageLength = 50,
                          columnDefs = 
                          list(list(className = 'dt-left', targets = "_all")),
                          lengthChange = FALSE,
-                          dom = 'Bfrtip',
+                         dom = 'Bfrtip',
                          buttons = c('csv', "copy")))
 ```
 
-```{r msa-align, eval = align_plot}
+```{r msa-align, eval = eval_plot}
 # function to plot alignment with msa package
 plot_align <- function(in_dat, out_name){
   write_lines(in_dat, "tmp.fasta")
@@ -532,32 +535,32 @@ plot_align <- function(in_dat, out_name){
 
 ### sequence alignment
 #### allele 1
-```{r msa-align1, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+```{r msa-align1, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 knitr::include_graphics(path="align1.pdf")
 ```
 
-```{r msa-align1_1st, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+```{r msa-align1_1st, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 knitr::include_graphics(path="align1_1st.pdf")
 ```
 
-```{r msa-align1_2nd, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+```{r msa-align1_2nd, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 knitr::include_graphics(path="align1_2nd.pdf")
 ```
 
 #### allele 2
-```{r msa-align2, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+```{r msa-align2, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 if(length(params$donor_ag) == 2){
 knitr::include_graphics(path="align2.pdf")
 }
 ```
 
-```{r msa-align2_1st, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+```{r msa-align2_1st, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 if(length(params$donor_ag) == 2){
 knitr::include_graphics(path="align2_1st.pdf")
 }
 ```
 
-```{r msa-align2_2nd, , eval = align_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
+```{r msa-align2_2nd, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 if(length(params$donor_ag) == 2){
 knitr::include_graphics(path="align2_2nd.pdf")
 }
