@@ -9,6 +9,7 @@
 #'
 #' @import
 #' devtools
+#' tidyverse
 #' purrr
 #' usethis
 #' rstudioapi
@@ -17,7 +18,7 @@
 #' set_proj("/Users/newfolder")
 #' }
 
-set_proj <- function(fd_name, proj_type)
+set_proj <- function(fd_name, proj_type = "general")
 {
   if (missing(fd_name)){
     warning("please enter the project path and speficy the project type")
@@ -38,7 +39,7 @@ set_proj <- function(fd_name, proj_type)
     create_project(fd_name, rstudio = rstudioapi::isAvailable(), open = FALSE)
   }
 
-  if (proj_type == "general") {
+  if (proj_type %in% c("general", "g", "")) {
     fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/general",sep = "/")
   } else if (proj_type %in% c("sc", "SC", "singlecell", "single_cell")) {
     fd_from <- paste(path.package("immuntools"),"rmarkdown/templates/report/skeleton/sc",sep = "/")

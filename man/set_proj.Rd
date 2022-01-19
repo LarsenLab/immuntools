@@ -4,7 +4,7 @@
 \alias{set_proj}
 \title{Function to set up a R project}
 \usage{
-set_proj(fd_name, proj_type)
+set_proj(fd_name, proj_type = "general")
 }
 \arguments{
 \item{fd_name}{folder name.}
