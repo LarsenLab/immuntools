@@ -12,7 +12,6 @@ params:
   seq_len: '15'
   align_plot: FALSE
   
-  
 title: '*AllotopeR* peptide prediction report'
 date: "`r Sys.Date()`"
 ---

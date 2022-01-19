@@ -9,7 +9,8 @@ allotope_human(
   self_ag = c("DQB1_03_01", "DQB1_03_01"),
   present_ag = c("DRB1_08_03", "DRB1_04_01"),
   seq_len = "15",
-  out_name = "allotope_report.html"
+  out_name = "allotope_report.html",
+  align_plot = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ allotope_human(
 \item{seq_len}{sequence length.}
 
 \item{out_name}{name and path of html report.}
+
+\item{align_plot}{whether or not plot alignment plots, default is FALSE.}
 }
 \value{
 an html report
@@ -35,6 +38,7 @@ allotope_human(don_ag = c("DQB1_05_01", "DQB1_06_02"),
 self_ag = c("DQB1_03_01", "DQB1_03_01"),
 present_ag = c("DRB1_08_03", "DRB1_04_01"),
 seq_len = '15',
-out_name = '~/projects/allotope_report.html')
+out_name = '~/projects/allotope_report.html'),
+align_plot = FALSE
 }
 }
