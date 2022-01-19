@@ -62,11 +62,17 @@ tbl_eplet_II <- read.csv(system.file("extdata/example", "MHC_II_test.csv", packa
 #* end of reference tables *#
 
 #* others *#   
-if(!dir.exists(file.path(here(), "output_httr"))){ # create an output folder if it doesn't exist
-  dir.create(file.path(here(), "output_httr"))
+# if(!dir.exists(file.path(here(), "output_httr"))){ # create an output folder if it doesn't exist
+#   dir.create(file.path(here(), "output_httr"))
+# }
+# 
+# out_fd <- as.character(glue(here(), "/output_httr/")) 
+
+if(!dir.exists(paste0(path.package("immuntools"), "/output_httr/"))){ # create an output folder if it doesn't exist
+  dir.create(file.path(paste0(path.package("immuntools"), "/output_httr/")))
 }
 
-out_fd <- as.character(glue(here(), "/output_httr/")) 
+out_fd <- as.character(file.path(paste0(path.package("immuntools"), "/output_httr/"))) 
 #* end of others *#
 ```
 
@@ -465,9 +471,9 @@ plot_align <- function(in_dat, out_name){
                pull(fa_split) %>% 
                as_vector()
   
-   plot_align(in_dat = for_align1, out_name = "align1.pdf")
-   plot_align(in_dat = short1_1st, out_name = "align1_1st.pdf")
-   plot_align(in_dat = short1_2nd, out_name = "align1_2nd.pdf")
+   plot_align(in_dat = for_align1, out_name = paste0(out_fd, "align1.pdf"))
+   plot_align(in_dat = short1_1st, out_name = paste0(out_fd, "align1_1st.pdf"))
+   plot_align(in_dat = short1_2nd, out_name = paste0(out_fd, "align1_2nd.pdf"))
  }
  
  # if have both donor input allele
@@ -522,13 +528,13 @@ plot_align <- function(in_dat, out_name){
                pull(fa_split) %>% 
                as_vector()
    
-   plot_align(in_dat = for_align1, out_name = "align1.pdf")
-   plot_align(in_dat = short1_1st, out_name = "align1_1st.pdf")
-   plot_align(in_dat = short1_2nd, out_name = "align1_2nd.pdf")
+   plot_align(in_dat = for_align1, out_name = paste0(out_fd, "align1.pdf"))
+   plot_align(in_dat = short1_1st, out_name = paste0(out_fd, "align1_1st.pdf"))
+   plot_align(in_dat = short1_2nd, out_name = paste0(out_fd, "align1_2nd.pdf"))
    
-   plot_align(in_dat = for_align2, out_name = "align2.pdf")
-   plot_align(in_dat = short2_1st, out_name = "align2_1st.pdf")
-   plot_align(in_dat = short2_2nd, out_name = "align2_2nd.pdf")
+   plot_align(in_dat = for_align2, out_name = paste0(out_fd, "align2.pdf"))
+   plot_align(in_dat = short2_1st, out_name = paste0(out_fd, "align2_1st.pdf"))
+   plot_align(in_dat = short2_2nd, out_name = paste0(out_fd, "align2_2nd.pdf"))
  }
  
 ```
@@ -536,33 +542,33 @@ plot_align <- function(in_dat, out_name){
 ### sequence alignment
 #### allele 1
 ```{r msa-align1, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
-knitr::include_graphics(path="align1.pdf")
+knitr::include_graphics(path = paste0(out_fd, "align1.pdf"))
 ```
 
 ```{r msa-align1_1st, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
-knitr::include_graphics(path="align1_1st.pdf")
+knitr::include_graphics(path = paste0(out_fd, "align1_1st.pdf"))
 ```
 
 ```{r msa-align1_2nd, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
-knitr::include_graphics(path="align1_2nd.pdf")
+knitr::include_graphics(path = paste0(out_fd, "align1_2nd.pdf"))
 ```
 
 #### allele 2
 ```{r msa-align2, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 if(length(params$donor_ag) == 2){
-knitr::include_graphics(path="align2.pdf")
+knitr::include_graphics(path = paste0(out_fd, "align2.pdf"))
 }
 ```
 
 ```{r msa-align2_1st, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 if(length(params$donor_ag) == 2){
-knitr::include_graphics(path="align2_1st.pdf")
+knitr::include_graphics(path = paste0(out_fd, "align2_1st.pdf"))
 }
 ```
 
 ```{r msa-align2_2nd, , eval = eval_plot, echo=FALSE, include=TRUE, fig.align="center", out.width="90%"}
 if(length(params$donor_ag) == 2){
-knitr::include_graphics(path="align2_2nd.pdf")
+knitr::include_graphics(path = paste0(out_fd, "align2_2nd.pdf"))
 }
 ```
 
