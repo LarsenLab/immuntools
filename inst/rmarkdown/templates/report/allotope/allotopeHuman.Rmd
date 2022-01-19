@@ -17,12 +17,9 @@ date: "`r Sys.Date()`"
 
 This report provides a summary of the IEDB query step for allo-epitope identification.  The output csv contain both donor and recipient peptides derived from the "antigen" input alleles that are predicted to bind bind to the user specified "presenting" allele. The user can use these files as input for in the prep_hu_binders.RmD step in to identify only donor derived peptides that contain non self polymorphisms.
 
-## Source code
-
-## Appendix
 ### Resources and Reference files
 
-The allele lists and amino acid sequences used in this package were downloaded from [IPD_IMGT-HLA](https://www.ebi.ac.uk/ipd/imgt/hla/) website on `date` - or we give version ( 10/2021 ?). A description of can be found at [HLA nomenclature](http://hla.alleles.org/nomenclature/index.html). The prediction function used in *allotopeR* is performed via the API to the [Immune epitope database](https://www.iedb.org).
+The allele lists and amino acid sequences used in this package were downloaded from [IPD_IMGT-HLA](https://www.ebi.ac.uk/ipd/imgt/hla/) website on 2021. A description of can be found at [HLA nomenclature](http://hla.alleles.org/nomenclature/index.html). The prediction function used in *allotopeR* is performed via the API to the [Immune epitope database](https://www.iedb.org).
 
 ```{r chunk option, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, include = FALSE)
@@ -30,7 +27,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, include = F
 
 ```{r packages}
 library(tidyverse)
-library(janitor)
+#library(janitor)
 library(here)
 library(glue)
 library(DT)
@@ -407,7 +404,9 @@ datatable(peps_distinct_cores,
           options = list(pageLength = 50,
                          columnDefs = 
                          list(list(className = 'dt-left', targets = "_all")),
-                         lengthChange = FALSE))
+                         lengthChange = FALSE,
+                          dom = 'Bfrtip',
+                         buttons = c('csv', "copy")))
 ```
 
 

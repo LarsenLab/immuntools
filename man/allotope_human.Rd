@@ -21,7 +21,7 @@ allotope_human(
 
 \item{seq_len}{sequence length.}
 
-\item{out_name}{name of html report.}
+\item{out_name}{name and path of html report.}
 }
 \value{
 an html report
@@ -31,6 +31,10 @@ Function of human peptide prediction.
 }
 \examples{
 \dontrun{
-allotope_human("/Users/newfolder")
+allotope_human(don_ag = c("DQB1_05_01", "DQB1_06_02"),
+self_ag = c("DQB1_03_01", "DQB1_03_01"),
+present_ag = c("DRB1_08_03", "DRB1_04_01"),
+seq_len = '15',
+out_name = '~/projects/allotope_report.html')
 }
 }
