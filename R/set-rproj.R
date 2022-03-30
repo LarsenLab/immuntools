@@ -15,7 +15,7 @@
 #' rstudioapi
 #' @examples
 #' \dontrun{
-#' set_proj(fd_name= "/Users/newfolder", proj_type = "g)
+#' set_proj(fd_name= "/Users/newfolder", proj_type = "g")
 #' }
 
 set_proj <- function(fd_name, proj_type = "general")
