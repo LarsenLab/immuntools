@@ -12,6 +12,6 @@ library(immuntools)<br>
 3. check ezset up, update content in skeleton
 4. find out why copy/csv buttons are missing in the final report? allotope_human?
 
-gz
+gz 
 
 
